@@ -265,10 +265,12 @@ def ListCat(params):
 			data1 = item.find('div', class_ = 'item-info inline')
 			#print [i for i in data1]
 			try:
-				genredata = data1.p
-				plotdata = data1.div
-				genre = ' '.join(genredata.stripped_strings).encode('utf-8')
-				plot = ' '.join(plotdata.stripped_strings).encode('utf-8')
+				#genredata = data1.p
+				#plotdata = data1.div
+				#genre = ' '.join(genredata.stripped_strings).encode('utf-8')
+				#plot = ' '.join(plotdata.stripped_strings).encode('utf-8')
+				plot = ' '.join(data1.stripped_strings).encode('utf-8')
+				genre = ''
 			except:
 				genre = plot = ''
 			uri = construct_request({
@@ -312,7 +314,7 @@ def ListSeries(params):
 	prtitle = ''; infoSet = {}; vhost_marks = []
 	global layout_marks
 	layout_marks = []
-	common_list = ['ФИЛЬМ', 'СМОТРЕТЬ', 'ТЕЛЕШОУ', 'МУЛЬТСЕРИАЛ', '\n', 'СЕРИАЛ']
+	common_list = ['ФИЛЬМ', 'СМОТРЕТЬ', 'ТЕЛЕШОУ', 'МУЛЬТСЕРИАЛ', '\n', 'СЕРИАЛ', 'Полный Фильм', 'Фильм']
 	common_titles_list = ['фильм', 'Фильм', 'документальный фильм', 'мультфильм', 'Телешоу', 'Концерт']
 
 	http = GET(params['url'])
@@ -326,6 +328,7 @@ def ListSeries(params):
 		return True
 	#print soup.prettify('utf-8')
 	content = soup.find('div', class_ = 'full-item')
+	#content = soup.find('div', id = 'allEntries')
 	#print content.prettify('utf-8')
 	if not content:
 		print "Content container is not found, used uncut html"
@@ -389,13 +392,13 @@ def ListSeries(params):
 
 	for iframe in videos:
 		#Layout 1
-		title = iframe.find_previous_sibling('span', style = re.compile("color\:.?(#ff9900|orange|yellow)"))
+		title = iframe.find_previous_sibling('span', style = re.compile("color\:.?(#ff9900|orange|yellow)|font-size\:.?(14|13)pt"))
 		if title:
 			#print "Layout 1"
 			layout_marks.append('1')
 		#Layout 2
 		if not title:
-			title = iframe.find_parent('span', style = re.compile("color\:.?(#ff9900|orange|yellow)"))
+			title = iframe.find_parent('span', style = re.compile("color\:.?(#ff9900|orange|yellow)|font-size\:.?(14|13)pt"))
 			if title:
 				#print "Layout 2"
 				layout_marks.append('2')
@@ -428,7 +431,7 @@ def ListSeries(params):
 					layout_marks.append('3a')
 		#Layout 4
 		if not title:
-			title = iframe.find_previous('span', style = re.compile("color\:.?(#ff9900|orange|yellow)"))
+			title = iframe.find_previous('span', style = re.compile("color\:.?(#ff9900|orange|yellow)|font-size\:.?(14|13)pt"))
 			#print title
 			#print str(type(title.contents[0]))
 			if title and str(type(title.contents[0])) == "<class 'bs4.element.Tag'>":
@@ -653,8 +656,8 @@ def GetVideo(url):
 			if crid:
 				if debug_mode: ShowMessage("ВКонтакте", "Применена авторизация")
 			else:
-				ShowMessage("ВКонтакте", "Ошибка при авторизации")
-				print "ошибка при авторизации вконтакте"
+				ShowMessage("ВКонтакте", "Ошибка авторизации")
+				print "ошибка авторизации вконтакте"
 				return False
 			#print crid
 			html = GET(url, headers = {"Cookie": crid})
@@ -704,9 +707,10 @@ def GetVideo(url):
 		page = GET(url)
 		token = re.findall("video_token: '(.*?)'", page)[0]
 		access_key = re.findall("access_key: '(.*?)'", page)[0]
+		d_id = re.findall("d_id: (\d*)", page)[0]
 		#referer = re.findall(r'player_url = "(.+?\.swf)";', page)[0]
 		referer = url
-		post = urllib.urlencode({"video_token": token, "access_key": access_key})
+		post = urllib.urlencode({"video_token": token, "access_key": access_key, "d_id": d_id, "content_type": 'movie'})
 		#print post
 		page = GET('http://moonwalk.cc/sessions/create_session', post = post, opts = 'xmlhttp', ref = url, headers = None)
 		#print page
@@ -716,7 +720,7 @@ def GetVideo(url):
 		else:
 			url = page["manifest_m3u8"]
 		
-		headers = {'User-Agent': UA, 'Connection': 'Keep-Alive', 'Referer': referer}
+		headers = {'User-Agent': UA, 'Connection': 'Keep-Alive', 'Referer': 'http://37.220.36.28/static/player/player_base.swf'}
 		url += '|' + urllib.urlencode(headers)
 		#print url
 		return url
